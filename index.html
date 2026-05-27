@@ -314,8 +314,7 @@
    FIREBASE  (공유 랭킹)
 ───────────────────────────────────────── */
 import { initializeApp }                              from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-import { getDatabase, ref, push, query,
-         orderByChild, limitToLast, get }             from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+import { getDatabase, ref, push, get }                from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyDyEJ4an-6rmd2qYPy7EC0AniZZQ9n3NSQ",
@@ -723,10 +722,9 @@ async function showRanking(myName, myScore) {
 
   let rankings = [];
   try {
-    const q   = query(ref(db, 'rankings'), orderByChild('score'), limitToLast(50));
-    const snap = await get(q);
+    const snap = await get(ref(db, 'rankings'));   // 인덱스 없이 전체 조회
     snap.forEach(child => rankings.push(child.val()));
-    rankings.sort((a,b) => b.score - a.score);
+    rankings.sort((a,b) => b.score - a.score);     // JS에서 정렬
     rankings = rankings.slice(0, 10);
   } catch(e) {
     console.warn('Firebase 로드 실패, 로컬 랭킹 표시:', e);
