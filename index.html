@@ -385,7 +385,7 @@
             <tbody id="rankList"></tbody>
           </table>
         </div>
-        <button class="retry-btn" id="retryBtn">🔄 다시 도전!</button>
+        <button class="retry-btn" id="retryBtn">🏠 홈화면으로</button>
       </div>
     </div>
   </div>
@@ -840,7 +840,8 @@ function renderRankTable(rankings, myName, myScore) {
 
 function resetGame() {
   hide('gameOverScreen');
-  startGame();
+  show('mainScreen');
+  gs = 'start';
 }
 
 /* ─────────────────────────────────────────
