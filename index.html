@@ -13,7 +13,7 @@
       display:flex;
       justify-content:center;
       align-items:center;
-      height:100vh;
+      height:100svh; /* svh = 주소창 제외한 실제 모바일 뷰포트 */
       overflow:hidden;
       font-family:'Jua','Apple SD Gothic Neo',sans-serif;
     }
@@ -22,7 +22,7 @@
       position:relative;
       width:100%;
       max-width:420px;
-      height:100vh;
+      height:100svh;
       overflow:hidden;
     }
 
@@ -37,14 +37,14 @@
     }
     #hudTop { display:flex; justify-content:space-between; align-items:flex-start; }
     #hudLeft { pointer-events:none; }
-    #stageName { font-size:13px; color:#ffe066; letter-spacing:2px; text-shadow:0 1px 4px #000; }
+    #stageName { font-size:clamp(11px,3vw,13px); color:#ffe066; letter-spacing:2px; text-shadow:0 1px 4px #000; }
     #scoreDisplay {
-      font-size:68px; line-height:1; color:#fff;
+      font-size:clamp(44px,14vw,68px); line-height:1; color:#fff;
       text-shadow:3px 3px 0 #000, 0 0 30px rgba(255,255,255,.25);
     }
     #livesRow { display:flex; align-items:center; gap:8px; margin-top:2px; }
-    #livesDisplay { font-size:24px; letter-spacing:2px; }
-    #comboDisplay { font-size:15px; color:#ffe066; min-height:20px; text-shadow:0 1px 4px #000; }
+    #livesDisplay { font-size:clamp(18px,5.5vw,24px); letter-spacing:2px; }
+    #comboDisplay { font-size:clamp(13px,3.5vw,15px); color:#ffe066; min-height:18px; text-shadow:0 1px 4px #000; }
 
     /* Mute button */
     #muteBtn {
@@ -64,7 +64,7 @@
     /* ── Controls ── */
     #controls {
       position:absolute; bottom:0; left:0; right:0;
-      height:130px; display:flex; gap:8px; padding:12px;
+      height:clamp(100px,17svh,130px); display:flex; gap:8px; padding:10px;
       background:linear-gradient(0deg,rgba(0,0,0,.7) 0%,transparent 100%);
       z-index:5;
     }
@@ -74,14 +74,14 @@
       border-radius:18px;
       background:rgba(255,255,255,.08);
       backdrop-filter:blur(12px);
-      color:#fff; font-size:28px;
+      color:#fff; font-size:clamp(20px,6.5vw,28px);
       font-family:'Jua',sans-serif;
       cursor:pointer;
       display:flex; flex-direction:column;
-      align-items:center; justify-content:center; gap:4px;
+      align-items:center; justify-content:center; gap:3px;
       transition:all .1s; user-select:none; -webkit-user-select:none;
     }
-    .ctrl-btn span.hint { font-size:11px; opacity:.4; }
+    .ctrl-btn span.hint { font-size:clamp(9px,2.5vw,11px); opacity:.4; }
     .ctrl-btn:active, .ctrl-btn.pressed {
       background:rgba(255,105,180,.45);
       border-color:#ff69b4;
@@ -115,9 +115,9 @@
       animation:glow 2s ease-in-out infinite alternate;
       color:#fff;
     }
-    #startScreen .sub  { font-size:13px; color:rgba(255,255,255,.4); letter-spacing:3px; }
-    #startScreen .main { font-size:44px; margin:6px 0; }
-    #startScreen .eng  { font-size:12px; color:rgba(255,255,255,.3); margin-bottom:40px; }
+    #startScreen .sub  { font-size:clamp(11px,3vw,13px); color:rgba(255,255,255,.4); letter-spacing:3px; }
+    #startScreen .main { font-size:clamp(30px,9vw,44px); margin:6px 0; }
+    #startScreen .eng  { font-size:clamp(10px,2.8vw,12px); color:rgba(255,255,255,.3); margin-bottom:clamp(24px,5svh,40px); }
     .start-btn {
       padding:15px 55px;
       background:linear-gradient(135deg,#ff69b4,#ff1493);
@@ -134,23 +134,25 @@
     /* Game Over */
     #gameOverScreen {
       background:rgba(0,0,0,.82); backdrop-filter:blur(12px);
-      overflow-y:auto; padding:10px 0;
-      justify-content:flex-start;
+      overflow-y:auto;            /* 패널이 화면보다 길면 스크롤 */
+      padding:10px 0;
+      justify-content:flex-start; /* flex-start + margin:auto 조합으로 중앙정렬 유지 */
     }
     .go-panel {
       width:90%; max-width:370px;
       background:linear-gradient(135deg,rgba(18,0,36,.97),rgba(0,8,28,.97));
       border:1px solid rgba(255,105,180,.35);
       border-radius:26px;
-      padding:18px 18px 16px;
+      padding:clamp(14px,3svh,18px) 18px clamp(12px,2.5svh,16px);
       box-shadow:0 0 60px rgba(255,105,180,.2), inset 0 0 40px rgba(255,255,255,.02);
       animation:fadeUp .45s ease;
-      margin:auto;
+      margin:auto;      /* 공간 있으면 수직 중앙, 없으면 위에서 쌓임 */
+      flex-shrink:0;    /* 압축되지 않도록 */
     }
-    .go-title { font-size:26px; color:#ff69b4; text-align:center; text-shadow:0 0 18px #ff69b4; margin-bottom:4px; }
-    .go-score-label { text-align:center; color:rgba(255,255,255,.55); font-size:12px; }
-    .go-score-value { text-align:center; font-size:42px; color:#ffe066; line-height:1.1; text-shadow:0 0 14px #ffe066; margin-bottom:4px; }
-    .go-stage { text-align:center; font-size:12px; color:rgba(255,255,255,.4); margin-bottom:12px; }
+    .go-title { font-size:clamp(20px,5.5vw,26px); color:#ff69b4; text-align:center; text-shadow:0 0 18px #ff69b4; margin-bottom:4px; }
+    .go-score-label { text-align:center; color:rgba(255,255,255,.55); font-size:clamp(11px,2.8vw,12px); }
+    .go-score-value { text-align:center; font-size:clamp(32px,9vw,42px); color:#ffe066; line-height:1.1; text-shadow:0 0 14px #ffe066; margin-bottom:4px; }
+    .go-stage { text-align:center; font-size:clamp(11px,2.8vw,12px); color:rgba(255,255,255,.4); margin-bottom:clamp(8px,1.5svh,12px); }
 
     .name-row { display:flex; gap:8px; margin-bottom:6px; }
     .name-row input {
@@ -185,7 +187,7 @@
     .rank-header span:first-child { font-size:14px; color:#ffe066; }
     #myRankText { font-size:12px; color:#ff69b4; }
 
-    .rank-scroll { max-height:150px; overflow-y:auto; }
+    .rank-scroll { max-height:clamp(100px,20svh,150px); overflow-y:auto; }
     .rank-scroll::-webkit-scrollbar { width:4px; }
     .rank-scroll::-webkit-scrollbar-track { background:rgba(255,255,255,.04); }
     .rank-scroll::-webkit-scrollbar-thumb { background:#ff69b4; border-radius:2px; }
@@ -216,6 +218,27 @@
     .retry-btn:active { transform:scale(.98); }
 
     .hidden { display:none !important; }
+
+    /* ── 작은 화면 (iPhone SE 375x667 이하) 추가 조정 ── */
+    @media (max-height: 650px) {
+      #hud { padding:8px 14px 0; }
+      #scoreDisplay { font-size:40px; }
+      #controls { height:90px; }
+      .ctrl-btn { font-size:20px; }
+      .go-score-value { font-size:30px; }
+      .go-panel { padding:12px 16px; }
+      .rank-scroll { max-height:90px; }
+      .retry-btn { padding:10px; font-size:16px; margin-top:8px; }
+      .name-row input { padding:9px 12px; font-size:14px; }
+      .pink-btn { padding:9px 12px; font-size:13px; }
+    }
+
+    /* ── 매우 좁은 화면 (320px 이하) ── */
+    @media (max-width: 360px) {
+      #scoreDisplay { font-size:38px; }
+      .ctrl-btn { font-size:18px; }
+      #startScreen .main { font-size:28px; }
+    }
   </style>
 </head>
 <body>
