@@ -1,0 +1,33 @@
+{
+  "name": "여고쌤의 무한한 학교계단",
+  "short_name": "학교계단",
+  "description": "귀여운 여고쌤과 함께하는 무한한 계단 오르기 게임!",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#ff69b4",
+  "background_color": "#0a0010",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["games", "entertainment"]
+}

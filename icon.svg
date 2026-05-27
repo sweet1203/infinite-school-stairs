@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a0035"/>
+      <stop offset="100%" style="stop-color:#0d001a"/>
+    </linearGradient>
+    <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a0050"/>
+      <stop offset="100%" style="stop-color:#3a0080"/>
+    </linearGradient>
+    <linearGradient id="stairGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff9ee0"/>
+      <stop offset="100%" style="stop-color:#ff4da6"/>
+    </linearGradient>
+    <linearGradient id="buildingGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a2080"/>
+      <stop offset="100%" style="stop-color:#2d1050"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="url(#bg)"/>
+
+  <!-- Sky gradient area -->
+  <rect x="20" y="20" width="472" height="300" rx="60" fill="url(#sky)" opacity="0.5"/>
+
+  <!-- Stars -->
+  <circle cx="80" cy="60" r="2" fill="white" opacity="0.8"/>
+  <circle cx="150" cy="40" r="1.5" fill="white" opacity="0.6"/>
+  <circle cx="240" cy="55" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="320" cy="35" r="1.5" fill="white" opacity="0.7"/>
+  <circle cx="400" cy="65" r="2" fill="white" opacity="0.8"/>
+  <circle cx="450" cy="45" r="1.5" fill="white" opacity="0.6"/>
+  <circle cx="110" cy="100" r="1.5" fill="white" opacity="0.5"/>
+  <circle cx="370" cy="90" r="2" fill="white" opacity="0.6"/>
+  <circle cx="470" cy="110" r="1.5" fill="white" opacity="0.5"/>
+
+  <!-- Moon -->
+  <circle cx="430" cy="70" r="22" fill="#fff9e6" opacity="0.9" filter="url(#glow)"/>
+  <circle cx="442" cy="63" r="17" fill="#1a0035"/>
+
+  <!-- School Building (left side) -->
+  <!-- Main building body -->
+  <rect x="30" y="160" width="180" height="220" rx="4" fill="url(#buildingGrad)"/>
+  <!-- Roof -->
+  <polygon points="20,160 210,160 195,130 45,130" fill="#5a2890"/>
+  <!-- Roof peak -->
+  <polygon points="115,110 45,130 195,130" fill="#6a35a0"/>
+  <!-- Flag pole -->
+  <line x1="120" y1="110" x2="120" y2="80" stroke="#aaa" stroke-width="3"/>
+  <polygon points="120,82 145,90 120,98" fill="#ff4da6"/>
+
+  <!-- Building windows -->
+  <rect x="50" y="175" width="35" height="28" rx="3" fill="#ffe066" opacity="0.9"/>
+  <rect x="100" y="175" width="35" height="28" rx="3" fill="#ffe066" opacity="0.7"/>
+  <rect x="150" y="175" width="35" height="28" rx="3" fill="#ffe066" opacity="0.9"/>
+  <rect x="50" y="220" width="35" height="28" rx="3" fill="#ffe066" opacity="0.6"/>
+  <rect x="100" y="220" width="35" height="28" rx="3" fill="#ffe066" opacity="0.9"/>
+  <rect x="150" y="220" width="35" height="28" rx="3" fill="#ffe066" opacity="0.7"/>
+  <rect x="50" y="265" width="35" height="28" rx="3" fill="#ffe066" opacity="0.8"/>
+  <rect x="150" y="265" width="35" height="28" rx="3" fill="#ffe066" opacity="0.6"/>
+
+  <!-- Door -->
+  <rect x="95" y="320" width="50" height="60" rx="5" fill="#2a0055"/>
+  <circle cx="138" cy="352" r="4" fill="#ffe066"/>
+
+  <!-- Stairs (center-right, going up diagonally) -->
+  <!-- Step shadow/depth effect -->
+  <g filter="url(#softGlow)">
+    <!-- Step 1 (bottom) -->
+    <rect x="220" y="400" width="100" height="20" rx="3" fill="url(#stairGrad)"/>
+    <rect x="220" y="360" width="80" height="20" fill="#cc3a85" opacity="0.5"/>
+
+    <!-- Step 2 -->
+    <rect x="260" y="360" width="100" height="20" rx="3" fill="url(#stairGrad)"/>
+    <rect x="260" y="320" width="80" height="20" fill="#cc3a85" opacity="0.5"/>
+
+    <!-- Step 3 -->
+    <rect x="300" y="320" width="100" height="20" rx="3" fill="url(#stairGrad)"/>
+    <rect x="300" y="280" width="80" height="20" fill="#cc3a85" opacity="0.5"/>
+
+    <!-- Step 4 -->
+    <rect x="340" y="280" width="100" height="20" rx="3" fill="url(#stairGrad)"/>
+    <rect x="340" y="240" width="80" height="20" fill="#cc3a85" opacity="0.5"/>
+
+    <!-- Step 5 (top) -->
+    <rect x="380" y="240" width="110" height="20" rx="3" fill="url(#stairGrad)"/>
+  </g>
+
+  <!-- Cute Teacher Character on stairs -->
+  <!-- Body (school uniform - white top, dark skirt) -->
+  <g transform="translate(350, 215)">
+    <!-- Legs -->
+    <rect x="6" y="42" width="8" height="18" rx="3" fill="#f5c5a0"/>
+    <rect x="18" y="42" width="8" height="18" rx="3" fill="#f5c5a0"/>
+    <!-- Shoes -->
+    <ellipse cx="10" cy="61" rx="7" ry="4" fill="#333"/>
+    <ellipse cx="22" cy="61" rx="7" ry="4" fill="#333"/>
+    <!-- Skirt -->
+    <path d="M2,28 L30,28 L34,45 L-2,45 Z" fill="#2d1060"/>
+    <!-- Blouse -->
+    <rect x="4" y="10" width="24" height="20" rx="4" fill="white"/>
+    <!-- Bow tie (ribbon on collar) -->
+    <path d="M12,12 L16,15 L20,12 L16,9 Z" fill="#ff4da6"/>
+    <!-- Arms -->
+    <rect x="-4" y="12" width="7" height="16" rx="3" fill="white"/>
+    <rect x="29" y="12" width="7" height="16" rx="3" fill="white"/>
+    <!-- Hands -->
+    <circle cx="-1" cy="30" r="4" fill="#f5c5a0"/>
+    <circle cx="33" cy="30" r="4" fill="#f5c5a0"/>
+    <!-- Head -->
+    <ellipse cx="16" cy="4" rx="13" ry="12" fill="#f5c5a0"/>
+    <!-- Hair -->
+    <path d="M3,-4 Q16,-18 29,-4 Q26,2 16,-2 Q6,2 3,-4 Z" fill="#4a2000"/>
+    <path d="M3,-4 Q0,6 2,14" stroke="#4a2000" stroke-width="4" fill="none"/>
+    <path d="M29,-4 Q32,6 30,14" stroke="#4a2000" stroke-width="4" fill="none"/>
+    <!-- Eyes -->
+    <ellipse cx="10" cy="5" rx="3" ry="3.5" fill="white"/>
+    <ellipse cx="22" cy="5" rx="3" ry="3.5" fill="white"/>
+    <circle cx="11" cy="5.5" r="2" fill="#4a2000"/>
+    <circle cx="23" cy="5.5" r="2" fill="#4a2000"/>
+    <circle cx="12" cy="4.5" r="0.8" fill="white"/>
+    <circle cx="24" cy="4.5" r="0.8" fill="white"/>
+    <!-- Blush -->
+    <ellipse cx="7" cy="9" rx="3.5" ry="2" fill="#ffb3cc" opacity="0.7"/>
+    <ellipse cx="25" cy="9" rx="3.5" ry="2" fill="#ffb3cc" opacity="0.7"/>
+    <!-- Smile -->
+    <path d="M11,11 Q16,15 21,11" stroke="#cc5566" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- Glasses (teacher!) -->
+    <rect x="6" y="3" width="8" height="5" rx="2" fill="none" stroke="#aa7700" stroke-width="1.5"/>
+    <rect x="18" y="3" width="8" height="5" rx="2" fill="none" stroke="#aa7700" stroke-width="1.5"/>
+    <line x1="14" y1="5" x2="18" y2="5" stroke="#aa7700" stroke-width="1.5"/>
+  </g>
+
+  <!-- Sparkles / magic effect -->
+  <g fill="#ffe066" filter="url(#glow)">
+    <polygon points="200,180 203,175 206,180 203,185" opacity="0.8"/>
+    <polygon points="470,200 473,195 476,200 473,205" opacity="0.7"/>
+    <polygon points="240,130 243,124 246,130 243,136" opacity="0.9"/>
+  </g>
+
+  <!-- Text "계단" at bottom -->
+  <rect x="60" y="430" width="392" height="65" rx="20" fill="#ff4da6" opacity="0.15"/>
+  <text x="256" y="477"
+    font-family="'Apple SD Gothic Neo', 'Nanum Gothic', sans-serif"
+    font-size="52"
+    font-weight="900"
+    text-anchor="middle"
+    fill="white"
+    filter="url(#glow)"
+    letter-spacing="8">학교계단</text>
+</svg>

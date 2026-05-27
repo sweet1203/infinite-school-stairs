@@ -4,6 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>여고쌤의 무한한 학교계단</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ff69b4">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- iOS Safari PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="학교계단">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <!-- OG / SNS 공유용 -->
+  <meta property="og:title" content="여고쌤의 무한한 학교계단">
+  <meta property="og:description" content="귀여운 여고쌤과 함께 계단을 올라보세요! 🏫">
+  <meta property="og:image" content="icon-512.png">
+  <meta property="og:type" content="website">
+
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -1514,6 +1532,15 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
    KICK OFF
 ───────────────────────────────────────── */
 requestAnimationFrame(loop);
+
+/* ─────────────────────────────────────────
+   PWA – Service Worker 등록
+───────────────────────────────────────── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
