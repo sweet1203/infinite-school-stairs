@@ -391,25 +391,12 @@
   </div>
 </div>
 
-<script type="module">
+<script>
 /* ─────────────────────────────────────────
-   FIREBASE  (공유 랭킹)
+   FIREBASE  (공유 랭킹 – REST API 직접 사용)
 ───────────────────────────────────────── */
-import { initializeApp }                              from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-import { getDatabase, ref, push, get }                from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey:            "AIzaSyDyEJ4an-6rmd2qYPy7EC0AniZZQ9n3NSQ",
-  authDomain:        "school-stair.firebaseapp.com",
-  databaseURL:       "https://school-stair-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId:         "school-stair",
-  storageBucket:     "school-stair.firebasestorage.app",
-  messagingSenderId: "338283323450",
-  appId:             "1:338283323450:web:9c529063f633008fb3d503",
-};
-
-const fbApp = initializeApp(firebaseConfig);
-const db    = getDatabase(fbApp);
+/* Firebase SDK 제거 → fetch()로 직접 통신 (index 오류 없음) */
+const DB_URL = "https://school-stair-default-rtdb.asia-southeast1.firebasedatabase.app";
 
 /* ─────────────────────────────────────────
    SOUND SYSTEM  (Web Audio API – no files)
@@ -783,7 +770,13 @@ async function saveScore() {
     `<tr><td colspan="4" style="text-align:center;padding:14px;color:rgba(255,255,255,.4)">💾 저장 중...</td></tr>`;
 
   try {
-    await push(ref(db, 'rankings'), { name, score, date, ts: Date.now() });
+    // Firebase REST API – SDK 없이 직접 fetch (index 오류 없음)
+    const res = await fetch(`${DB_URL}/rankings.json`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, score, date, ts: Date.now() })
+    });
+    if (!res.ok) throw new Error('write failed');
   } catch(e) {
     console.warn('Firebase 저장 실패, 로컬 저장으로 대체:', e);
     let local = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
@@ -804,9 +797,13 @@ async function showRanking(myName, myScore) {
 
   let rankings = [];
   try {
-    const snap = await get(ref(db, 'rankings'));   // 인덱스 없이 전체 조회
-    snap.forEach(child => rankings.push(child.val()));
-    rankings.sort((a,b) => b.score - a.score);     // JS에서 정렬
+    // Firebase REST API – index 없이 전체 조회 후 JS에서 정렬
+    const res  = await fetch(`${DB_URL}/rankings.json`);
+    const data = await res.json();
+    if (data && typeof data === 'object') {
+      rankings = Object.values(data);
+    }
+    rankings.sort((a,b) => b.score - a.score);
     rankings = rankings.slice(0, 10);
   } catch(e) {
     console.warn('Firebase 로드 실패, 로컬 랭킹 표시:', e);
@@ -1462,8 +1459,11 @@ async function openRecords() {
 
   let rankings = [];
   try {
-    const snap = await get(ref(db, 'rankings'));
-    snap.forEach(child => rankings.push(child.val()));
+    const res  = await fetch(`${DB_URL}/rankings.json`);
+    const data = await res.json();
+    if (data && typeof data === 'object') {
+      rankings = Object.values(data);
+    }
     rankings.sort((a, b) => b.score - a.score);
     rankings = rankings.slice(0, 10);
   } catch(e) {
