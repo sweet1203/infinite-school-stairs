@@ -202,9 +202,9 @@
     .go-score-value { text-align:center; font-size:clamp(32px,9vw,42px); color:#ffe066; line-height:1.1; text-shadow:0 0 14px #ffe066; margin-bottom:4px; }
     .go-stage { text-align:center; font-size:clamp(11px,2.8vw,12px); color:rgba(255,255,255,.4); margin-bottom:clamp(8px,1.5svh,12px); }
 
-    .name-row { display:flex; gap:8px; margin-bottom:6px; }
+    .name-row { display:flex; flex-direction:column; gap:10px; margin-bottom:6px; }
     .name-row input {
-      flex:1; padding:12px 14px;
+      width:100%; padding:12px 14px;
       background:rgba(255,255,255,.08);
       border:1px solid rgba(255,255,255,.18);
       border-radius:12px;
@@ -215,14 +215,13 @@
     .name-row input:focus { border-color:#ff69b4; }
     .name-row input::placeholder { color:rgba(255,255,255,.3); }
     .pink-btn {
-      padding:12px 16px;
+      width:100%; padding:13px;
       background:linear-gradient(135deg,#ff69b4,#ff1493);
       border:none; border-radius:12px;
-      color:#fff; font-size:15px;
+      color:#fff; font-size:17px;
       font-family:'Jua',sans-serif;
       cursor:pointer;
       box-shadow:0 3px 12px rgba(255,20,147,.4);
-      white-space:nowrap;
     }
     .pink-btn:active { transform:scale(.95); }
 
