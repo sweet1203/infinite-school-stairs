@@ -309,7 +309,27 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+/* ─────────────────────────────────────────
+   FIREBASE  (공유 랭킹)
+───────────────────────────────────────── */
+import { initializeApp }                              from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { getDatabase, ref, push, query,
+         orderByChild, limitToLast, get }             from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyDyEJ4an-6rmd2qYPy7EC0AniZZQ9n3NSQ",
+  authDomain:        "school-stair.firebaseapp.com",
+  databaseURL:       "https://school-stair-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "school-stair",
+  storageBucket:     "school-stair.firebasestorage.app",
+  messagingSenderId: "338283323450",
+  appId:             "1:338283323450:web:9c529063f633008fb3d503",
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db    = getDatabase(fbApp);
+
 /* ─────────────────────────────────────────
    SOUND SYSTEM  (Web Audio API – no files)
 ───────────────────────────────────────── */
@@ -661,49 +681,81 @@ function showGameOver() {
     `📅 ${now.getFullYear()}.${fmt(now.getMonth()+1)}.${fmt(now.getDate())} ` +
     `${fmt(now.getHours())}:${fmt(now.getMinutes())}`;
 
-  showRanking();
+  showRanking(); // 저장 전 현재 랭킹 미리 표시
 }
 
 document.getElementById('saveBtn').addEventListener('click', saveScore);
 document.getElementById('retryBtn').addEventListener('click', resetGame);
 
-function saveScore() {
+async function saveScore() {
   const nameEl = document.getElementById('playerName');
   const name   = nameEl.value.trim() || '익명';
   const now    = new Date();
   const fmt    = (n) => String(n).padStart(2,'0');
   const date   = `${fmt(now.getMonth()+1)}/${fmt(now.getDate())} ${fmt(now.getHours())}:${fmt(now.getMinutes())}`;
 
-  let ranking = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-  ranking.push({ name, score, date });
-  ranking.sort((a,b) => b.score - a.score);
-  ranking = ranking.slice(0, 10);
-  localStorage.setItem(LS_KEY, JSON.stringify(ranking));
-
   savedScore = { name, score };
   hide('inputArea');
-  showRanking(name, score);
+
+  // 저장 중 표시
+  document.getElementById('rankList').innerHTML =
+    `<tr><td colspan="4" style="text-align:center;padding:14px;color:rgba(255,255,255,.4)">💾 저장 중...</td></tr>`;
+
+  try {
+    await push(ref(db, 'rankings'), { name, score, date, ts: Date.now() });
+  } catch(e) {
+    console.warn('Firebase 저장 실패, 로컬 저장으로 대체:', e);
+    let local = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+    local.push({ name, score, date });
+    local.sort((a,b) => b.score - a.score);
+    localStorage.setItem(LS_KEY, JSON.stringify(local.slice(0,10)));
+  }
+
+  await showRanking(name, score);
 }
 
-function showRanking(myName, myScore) {
-  const ranking = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+async function showRanking(myName, myScore) {
+  // 로딩 표시
+  if (!myName) {
+    document.getElementById('rankList').innerHTML =
+      `<tr><td colspan="4" style="text-align:center;padding:14px;color:rgba(255,255,255,.4)">📡 불러오는 중...</td></tr>`;
+  }
+
+  let rankings = [];
+  try {
+    const q   = query(ref(db, 'rankings'), orderByChild('score'), limitToLast(50));
+    const snap = await get(q);
+    snap.forEach(child => rankings.push(child.val()));
+    rankings.sort((a,b) => b.score - a.score);
+    rankings = rankings.slice(0, 10);
+  } catch(e) {
+    console.warn('Firebase 로드 실패, 로컬 랭킹 표시:', e);
+    rankings = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+  }
+
+  renderRankTable(rankings, myName, myScore);
+}
+
+function renderRankTable(rankings, myName, myScore) {
   let myRank = -1;
-  const medals = ['🥇','🥈','🥉'];
+  const medals  = ['🥇','🥈','🥉'];
   const rkClass = ['rk1','rk2','rk3'];
 
-  document.getElementById('rankList').innerHTML = ranking.map((r, i) => {
-    const isMe = myName && r.name === myName && r.score === myScore;
-    if (isMe && myRank < 0) myRank = i + 1;
-    const medalEl = i < 3
-      ? `<span class="${rkClass[i]}">${medals[i]}</span>`
-      : `<span>${i+1}</span>`;
-    return `<tr${isMe ? ' class="mine"' : ''}>
-      <td>${medalEl}</td>
-      <td>${r.name}</td>
-      <td><strong>${r.score}</strong></td>
-      <td style="font-size:11px;opacity:.65">${r.date}</td>
-    </tr>`;
-  }).join('');
+  document.getElementById('rankList').innerHTML = rankings.length
+    ? rankings.map((r, i) => {
+        const isMe = myName && r.name === myName && r.score === myScore;
+        if (isMe && myRank < 0) myRank = i + 1;
+        const medalEl = i < 3
+          ? `<span class="${rkClass[i]}">${medals[i]}</span>`
+          : `<span>${i+1}</span>`;
+        return `<tr${isMe ? ' class="mine"' : ''}>
+          <td>${medalEl}</td>
+          <td>${r.name}</td>
+          <td><strong>${r.score}</strong></td>
+          <td style="font-size:11px;opacity:.65">${r.date}</td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="4" style="text-align:center;padding:14px;color:rgba(255,255,255,.35)">아직 기록이 없어요! 첫 주인공이 되세요 🏆</td></tr>`;
 
   document.getElementById('myRankText').textContent =
     myRank > 0 ? `✨ 내 순위: ${myRank}위` : '';
