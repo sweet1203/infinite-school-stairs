@@ -129,7 +129,55 @@
       animation:bounce 1.6s ease-in-out infinite;
     }
     .start-btn:active { transform:scale(.95); }
-    .key-guide { font-size:12px; color:rgba(255,255,255,.25); margin-top:22px; }
+    .key-guide { font-size:12px; color:rgba(255,255,255,.25); margin-top:20px; }
+
+    /* 메인화면 버튼 묶음 */
+    .main-btns {
+      display:flex; flex-direction:column;
+      align-items:center; gap:14px;
+    }
+    .record-btn {
+      padding:13px 52px;
+      background:transparent;
+      border:2px solid rgba(255,105,180,.55);
+      border-radius:50px;
+      color:#ff69b4; font-size:20px;
+      font-family:'Jua',sans-serif;
+      cursor:pointer;
+      transition:all .2s;
+      letter-spacing:1px;
+    }
+    .record-btn:hover  { background:rgba(255,105,180,.12); }
+    .record-btn:active { background:rgba(255,105,180,.25); transform:scale(.95); }
+
+    /* 기록보기 패널 */
+    #recordScreen { background:rgba(0,0,0,.88); backdrop-filter:blur(14px); }
+    .rec-panel {
+      width:90%; max-width:370px;
+      background:linear-gradient(135deg,rgba(18,0,36,.97),rgba(0,8,28,.97));
+      border:1px solid rgba(255,105,180,.35);
+      border-radius:26px;
+      padding:22px 20px 18px;
+      box-shadow:0 0 60px rgba(255,105,180,.18);
+      animation:fadeUp .4s ease;
+    }
+    .rec-title {
+      font-size:clamp(20px,5.5vw,24px);
+      color:#ffe066; text-align:center;
+      text-shadow:0 0 14px #ffe066;
+      margin-bottom:14px;
+    }
+    .back-btn {
+      width:100%; margin-top:12px; padding:13px;
+      background:rgba(255,105,180,.12);
+      border:1px solid rgba(255,105,180,.35);
+      border-radius:14px;
+      color:#fff; font-size:17px;
+      font-family:'Jua',sans-serif;
+      cursor:pointer; transition:background .2s;
+    }
+    .back-btn:hover  { background:rgba(255,105,180,.25); }
+    .back-btn:active { transform:scale(.98); }
 
     /* Game Over */
     #gameOverScreen {
@@ -274,8 +322,25 @@
       <div class="main glow-title">무한한 학교계단</div>
       <div class="eng">Infinite School Stairs</div>
     </div>
-    <button class="start-btn" id="startBtn">🚀 시작하기</button>
+    <div class="main-btns">
+      <button class="start-btn" id="startBtn">🚀 게임시작</button>
+      <button class="record-btn" id="recordBtn">🏆 기록보기</button>
+    </div>
     <div class="key-guide">← → 화살표 또는 Z / X 키로 이동</div>
+  </div>
+
+  <!-- Records Screen -->
+  <div class="panel hidden" id="recordScreen">
+    <div class="rec-panel">
+      <div class="rec-title">🏆 명예의 전당</div>
+      <div class="rank-scroll" style="max-height:clamp(260px,55svh,400px)">
+        <table>
+          <thead><tr><th>#</th><th>이름</th><th>점수</th><th>날짜·시간</th></tr></thead>
+          <tbody id="mainRankList"></tbody>
+        </table>
+      </div>
+      <button class="back-btn" id="backBtn">← 돌아가기</button>
+    </div>
   </div>
 
   <!-- Game Over -->
@@ -1366,6 +1431,46 @@ document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('startBtn').addEventListener('touchstart', e => { e.preventDefault(); startGame(); });
 document.getElementById('muteBtn').addEventListener('click', toggleMute);
 document.getElementById('muteBtn').addEventListener('touchstart', e => { e.preventDefault(); toggleMute(); });
+
+// 기록보기
+document.getElementById('recordBtn').addEventListener('click', openRecords);
+document.getElementById('recordBtn').addEventListener('touchstart', e => { e.preventDefault(); openRecords(); });
+document.getElementById('backBtn').addEventListener('click', () => hide('recordScreen'));
+document.getElementById('backBtn').addEventListener('touchstart', e => { e.preventDefault(); hide('recordScreen'); });
+
+async function openRecords() {
+  show('recordScreen');
+  document.getElementById('mainRankList').innerHTML =
+    `<tr><td colspan="4" style="text-align:center;padding:16px;color:rgba(255,255,255,.4)">📡 불러오는 중...</td></tr>`;
+
+  let rankings = [];
+  try {
+    const snap = await get(ref(db, 'rankings'));
+    snap.forEach(child => rankings.push(child.val()));
+    rankings.sort((a, b) => b.score - a.score);
+    rankings = rankings.slice(0, 10);
+  } catch(e) {
+    document.getElementById('mainRankList').innerHTML =
+      `<tr><td colspan="4" style="text-align:center;padding:16px;color:rgba(255,100,100,.6)">불러오기 실패 😢</td></tr>`;
+    return;
+  }
+
+  const medals  = ['🥇','🥈','🥉'];
+  const rkClass = ['rk1','rk2','rk3'];
+  document.getElementById('mainRankList').innerHTML = rankings.length
+    ? rankings.map((r, i) => {
+        const medalEl = i < 3
+          ? `<span class="${rkClass[i]}">${medals[i]}</span>`
+          : `<span>${i+1}</span>`;
+        return `<tr>
+          <td>${medalEl}</td>
+          <td>${r.name}</td>
+          <td><strong>${r.score}</strong></td>
+          <td style="font-size:11px;opacity:.65">${r.date}</td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="4" style="text-align:center;padding:16px;color:rgba(255,255,255,.35)">아직 기록이 없어요! 첫 주인공이 되세요 🏆</td></tr>`;
+}
 
 const btnL = document.getElementById('btnL');
 const btnR = document.getElementById('btnR');
