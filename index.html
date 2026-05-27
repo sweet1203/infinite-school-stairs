@@ -327,8 +327,8 @@
 
   <!-- Controls -->
   <div id="controls" class="hidden">
-    <button class="ctrl-btn" id="btnL">⬅️<span class="hint">← / Z</span></button>
-    <button class="ctrl-btn" id="btnR">➡️<span class="hint">→ / X</span></button>
+    <button class="ctrl-btn" id="btnL">↩️<span class="hint">← / Z 방향전환</span></button>
+    <button class="ctrl-btn" id="btnR">🦶<span class="hint">→ / X 올라가기</span></button>
   </div>
 
   <!-- Start Screen -->
@@ -343,7 +343,7 @@
       <button class="start-btn" id="startBtn">🚀 게임시작</button>
       <button class="record-btn" id="recordBtn">🏆 기록보기</button>
     </div>
-    <div class="key-guide">← → 화살표 또는 Z / X 키로 이동</div>
+    <div class="key-guide">→/X 올라가기 &nbsp;|&nbsp; ←/Z 방향전환</div>
     <div style="text-align:center; margin-top:14px; font-size:13px; color:rgba(255,255,255,.45); letter-spacing:2px;">- 정보쌤 제작 -</div>
   </div>
 
@@ -660,20 +660,23 @@ function addStair() {
 /* ─────────────────────────────────────────
    MOVE LOGIC
 ───────────────────────────────────────── */
-function move(direction) { // -1 = left, 1 = right
+function move(direction) { // -1 = 방향전환(left btn), 1 = 앞으로(right btn)
   if (gs !== 'playing') return;
 
   const next    = stairs[1];
   const nextDir = next.x > pReal.x ? 1 : -1;
 
+  // 오른쪽 버튼 = 현재 방향으로 전진, 왼쪽 버튼 = 반대 방향으로 전환
+  const attempt = direction === 1 ? pReal.dir : -pReal.dir;
+
   flashBtn(direction === -1 ? 'btnL' : 'btnR');
 
-  if (direction === nextDir) {
+  if (attempt === nextDir) {
     // ✅ Correct!
     score++;
     combo++;
     pReal.x   = next.x;
-    pReal.dir = direction;
+    pReal.dir = attempt;
 
     stairs.shift();
     addStair();
@@ -1313,9 +1316,11 @@ function drawStairs() {
     ctx.fillStyle = 'rgba(255,255,255,.4)';
     ctx.fillRect(x+5, y+2, STAIR_W-10, 3);
 
-    // Arrow on next stair
+    // Arrow on next stair — 눌러야 할 버튼 방향 표시
     if (nxt) {
-      const dir = stairs[1].x > stairs[0].x ? 1 : -1;
+      const nextDir = stairs[1].x > stairs[0].x ? 1 : -1;
+      // nextDir이 현재 방향과 같으면 오른쪽(전진)버튼, 다르면 왼쪽(전환)버튼
+      const dir = nextDir === pReal.dir ? 1 : -1;
       ctx.fillStyle = '#ff69b4';
       ctx.save();
       ctx.translate(s.x, s.y - 12);
