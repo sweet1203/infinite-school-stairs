@@ -1488,39 +1488,43 @@ function drawCharacter(x, y, dir, wF, hop) {
   ctx.beginPath(); ctx.arc(-1, -1.5, 1.5, 0, Math.PI*2); ctx.fill();
   ctx.restore();
 
-  // ── 코
-  ctx.fillStyle = '#e09070';
-  ctx.beginPath(); ctx.arc(18, -63, 2.2, 0, Math.PI*2); ctx.fill();
+  // ── 코 (작은 곡선, 튀어나오지 않게)
+  ctx.strokeStyle = '#c07858'; ctx.lineWidth = 1.4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(16, -65); ctx.quadraticCurveTo(19, -63, 16, -61); ctx.stroke();
 
-  // ── 입 (바넬로피 큰 미소)
-  ctx.strokeStyle = '#b03020'; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.arc(16, -56, 4.5, -0.2, Math.PI * .65); ctx.stroke();
-  ctx.fillStyle = '#fff'; // 치아
-  ctx.beginPath(); ctx.ellipse(16, -54, 3.5, 2, 0, 0, Math.PI); ctx.fill();
-
-  // ── 눈 (바넬로피 스타일 – 크고 둥근 헤이즐)
+  // ── 입 (넓고 환한 미소)
   ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.ellipse(13, -68, 5, 7, 0.1, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#8a9e30'; // 올리브/헤이즐
-  ctx.beginPath(); ctx.ellipse(13.5, -68, 4, 6.5, 0.1, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#1a1205';
-  ctx.beginPath(); ctx.ellipse(14, -68, 2.5, 4.5, 0.1, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#fff'; // 큰 하이라이트
-  ctx.beginPath(); ctx.ellipse(11.5, -71, 2, 2.5, 0, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,.75)'; // 작은 하이라이트
-  ctx.beginPath(); ctx.arc(15.5, -66, 1.3, 0, Math.PI*2); ctx.fill();
-  ctx.strokeStyle = '#1a1205'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(8,-74); ctx.bezierCurveTo(10,-77,15,-77,18,-73); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(9, -57);
+  ctx.bezierCurveTo(11, -50, 21, -50, 22, -57);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(8, -58); ctx.bezierCurveTo(11, -64, 20, -64, 23, -58); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(9, -57); ctx.bezierCurveTo(11, -50, 21, -50, 22, -57); ctx.stroke();
+
+  // ── 눈 (크고 다크 브라운)
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.ellipse(12, -69, 5.5, 7, 0.08, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#5c2d0a';
+  ctx.beginPath(); ctx.ellipse(12.5, -69, 4.5, 6.5, 0.08, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#1a0800';
+  ctx.beginPath(); ctx.ellipse(13, -69, 3, 5, 0.08, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.ellipse(10.5, -72, 2.2, 2.8, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.75)';
+  ctx.beginPath(); ctx.arc(15, -67, 1.2, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#1a0800'; ctx.lineWidth = 2.2;
+  ctx.beginPath(); ctx.moveTo(6.5,-75); ctx.bezierCurveTo(9,-78,14,-78,17.5,-74); ctx.stroke();
   ctx.lineWidth = 1.2;
-  ctx.beginPath(); ctx.moveTo(8,-62); ctx.bezierCurveTo(11,-61,15,-61,18,-63); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(7,-63); ctx.bezierCurveTo(10,-61,14,-62,17,-64); ctx.stroke();
 
   // 눈썹
-  ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(7,-77); ctx.quadraticCurveTo(13,-81,19,-77); ctx.stroke();
+  ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(6,-79); ctx.quadraticCurveTo(12,-83,18,-78); ctx.stroke();
 
   // 볼 홍조
-  ctx.fillStyle = 'rgba(255,120,100,.32)';
-  ctx.beginPath(); ctx.ellipse(16, -60, 5.5, 3.2, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,90,80,.35)';
+  ctx.beginPath(); ctx.ellipse(17, -60, 6.5, 3.5, 0, 0, Math.PI*2); ctx.fill();
 
   ctx.restore();
 }
