@@ -601,7 +601,7 @@ charImg.src = 'char.png';
 
 // Visual smooth player
 const pReal   = { x:0, y:0, dir:1 };
-const pVisual = { x:0, y:0, hop:0, walkF:0 };
+const pVisual = { x:0, y:0, hop:0, walkF:0, faceDir:1, turnSquish:0 };
 
 // Pre-generated star data (deterministic)
 const STARS = Array.from({length:90}, (_,i) => ({
@@ -639,6 +639,8 @@ function startGame() {
   pVisual.y = pReal.y;
   pVisual.hop = 0;
   pVisual.walkF = 0;
+  pVisual.faceDir = 1;
+  pVisual.turnSquish = 0;
 
   stairs = [{ x: pReal.x, y: pReal.y }];
   for (let i = 0; i < STAIR_COUNT; i++) addStair();
@@ -1346,13 +1348,21 @@ function drawCharacter(x, y, dir, wF, hop) {
   ctx.save();
   ctx.translate(x, y + hop);
 
-  // ── 이동 방향으로 기울이기 (dir: 1=오른쪽, -1=왼쪽)
-  ctx.rotate(dir * 0.07);
+  // ── 방향 전환 스쿼시 (X축 납작 → 반전 직후 통통 튀는 느낌)
+  const ts = pVisual.turnSquish;
+  const turnFlatX = 1 - Math.sin(ts * Math.PI) * 0.45;  // 전환 순간 X가 납작해짐
+  const turnPuffY = 1 + Math.sin(ts * Math.PI) * 0.15;  // 동시에 Y가 약간 늘어남
+
+  // ── 좌우 방향 반전 (dir=1→오른쪽, dir=-1→왼쪽으로 뒤집기)
+  ctx.scale(dir * turnFlatX, turnPuffY);
+
+  // ── 진행 방향으로 살짝 앞으로 기울이기 (scale 후라서 항상 전방 기울기)
+  ctx.rotate(0.06);
 
   const baseH  = 115;
   const baseW  = baseH * (charImg.naturalWidth / charImg.naturalHeight || 0.575);
 
-  // ── 그림자: 공중에 뜨면 작아짐
+  // ── 그림자: 공중에 뜨면 작아짐 (그림자는 flip 영향 받지 않도록 스케일 보정)
   const airRatio = Math.max(0, -hop / 20);
   const shadowW  = 22 * (1 - airRatio * 0.45);
   const shadowA  = 0.22 * (1 - airRatio * 0.5);
@@ -1401,7 +1411,7 @@ function drawCharacter(x, y, dir, wF, hop) {
   // 앞다리
   drawLeg(hipY, -4,  swing, scaleX);
 
-  ctx.restore(); // ← 이게 빠져서 매 프레임 회전이 누적됐음!
+  ctx.restore();
 }
 
 function drawLeg(hipY, xOff, angle, scaleX) {
@@ -1676,6 +1686,14 @@ function updateVisual() {
 
   // Walk animation only when landing
   if (gs === 'playing') pVisual.walkF += .13;
+
+  // 방향 전환 감지 → 스쿼시 트리거
+  if (pReal.dir !== pVisual.faceDir) {
+    pVisual.faceDir = pReal.dir;
+    pVisual.turnSquish = 1.0;  // 1.0 = 전환 직후, 0으로 감쇠
+  }
+  if (pVisual.turnSquish > 0) pVisual.turnSquish -= 0.18;
+  if (pVisual.turnSquish < 0) pVisual.turnSquish = 0;
 }
 
 /* ─────────────────────────────────────────
