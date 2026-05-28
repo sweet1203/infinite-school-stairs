@@ -1,5 +1,5 @@
 /* 여고쌤의 무한한 학교계단 - Service Worker */
-const CACHE = 'school-stairs-v10';
+const CACHE = 'school-stairs-v11';
 const ASSETS = [
   './',
   './index.html',
