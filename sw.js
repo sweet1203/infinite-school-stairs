@@ -1,19 +1,16 @@
-/* 여고쌤의 무한한 학교계단 - Service Worker */
-const CACHE = 'school-stairs-v11';
-const ASSETS = [
-  './',
-  './index.html',
+/* 대성여고 무한 학교계단 - Service Worker */
+const CACHE = 'school-stairs-v12';
+const STATIC = [
   './manifest.json',
   './icon.svg',
   './icon-192.png',
   './icon-512.png',
   './char.png',
-  'https://fonts.googleapis.com/css2?family=Jua&display=swap',
 ];
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE).then(c => c.addAll(STATIC)).then(() => self.skipWaiting())
   );
 });
 
@@ -26,14 +23,29 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Firebase / Google Fonts 는 네트워크 우선
-  if (e.request.url.includes('firebase') || e.request.url.includes('gstatic') || e.request.url.includes('googleapis')) {
+  const url = e.request.url;
+
+  // ── HTML / JS → 항상 네트워크 우선 (최신 버전 보장)
+  if (e.request.destination === 'document' || url.endsWith('.html') || url.endsWith('.js')) {
     e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
+      fetch(e.request)
+        .then(res => {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+          return res;
+        })
+        .catch(() => caches.match(e.request))
     );
     return;
   }
-  // 그 외 자산은 캐시 우선
+
+  // ── Firebase / Google Fonts → 네트워크 우선
+  if (url.includes('firebase') || url.includes('gstatic') || url.includes('googleapis')) {
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+    return;
+  }
+
+  // ── 이미지·폰트 등 정적 자산 → 캐시 우선
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );
