@@ -1347,16 +1347,41 @@ function drawCharacter(x, y, dir, wF, hop) {
   ctx.translate(x, y + hop);
   if (dir === -1) ctx.scale(-1, 1);
 
-  // 그림자
-  ctx.fillStyle = 'rgba(0,0,0,.22)';
-  ctx.beginPath(); ctx.ellipse(0, 6, 22, 5, 0, 0, Math.PI*2); ctx.fill();
+  const baseH = 115;
+  const baseW = baseH * (charImg.naturalWidth / charImg.naturalHeight || 0.575);
 
-  if (charImg.complete && charImg.naturalHeight > 0) {
-    const h = 115;
-    const w = h * (charImg.naturalWidth / charImg.naturalHeight);
-    const bob = Math.sin(wF * 2) * 2.5; // 걸을 때 살짝 위아래로
-    ctx.drawImage(charImg, -w / 2, -h + bob, w, h);
+  // ── 그림자: 공중에 뜨면 작아짐
+  const airRatio = Math.max(0, -hop / 20);          // 0(땅)~1(최고점)
+  const shadowW  = 22 * (1 - airRatio * 0.45);
+  const shadowA  = 0.22 * (1 - airRatio * 0.5);
+  ctx.fillStyle = `rgba(0,0,0,${shadowA.toFixed(2)})`;
+  ctx.beginPath(); ctx.ellipse(0, 6, shadowW, 5, 0, 0, Math.PI*2); ctx.fill();
+
+  if (!charImg.complete || charImg.naturalHeight === 0) { ctx.restore(); return; }
+
+  // ── 걷기 bob: 점프 중엔 끄고, 땅에서만 아주 살살
+  const onGround = hop > -3;
+  const walkBob  = onGround ? Math.sin(wF * 1.1) * 1.2 : 0;
+
+  // ── 착지 스쿼시/스트레치
+  //   hop -20→0: 올라갈 때 살짝 늘어나고, 착지 직전엔 살짝 눌림
+  let scaleY = 1, scaleX = 1;
+  if (hop < -14) {
+    // 상승 구간: 세로로 약간 늘어남
+    const t = (-hop - 14) / 6;
+    scaleY = 1 + t * 0.06;
+    scaleX = 1 - t * 0.04;
+  } else if (hop < 0) {
+    // 하강 착지 구간: 세로로 살짝 눌림
+    const t = (-hop) / 14;
+    scaleY = 1 - t * 0.05;
+    scaleX = 1 + t * 0.04;
   }
+
+  const drawH = baseH * scaleY;
+  const drawW = baseW * scaleX;
+
+  ctx.drawImage(charImg, -drawW / 2, -drawH + walkBob, drawW, drawH);
 
   ctx.restore();
 }
