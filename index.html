@@ -16,11 +16,16 @@
   <meta name="apple-mobile-web-app-title" content="학교계단">
   <link rel="apple-touch-icon" href="icon-192.png">
 
-  <!-- OG / SNS 공유용 -->
+  <!-- OG / SNS 공유용 (og:image는 절대 URL 필요) -->
   <meta property="og:title" content="대성여고 무한 학교계단">
   <meta property="og:description" content="대성여고 무한 학교계단 — 계단을 올라보세요! 🏫">
-  <meta property="og:image" content="icon-512.png">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://infinite-school-stairs.vercel.app/">
+  <meta property="og:image" content="https://infinite-school-stairs.vercel.app/icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://infinite-school-stairs.vercel.app/icon-512.png">
 
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
   <style>
@@ -53,8 +58,28 @@
       z-index:5;
       background:linear-gradient(180deg,rgba(0,0,0,.65) 0%,transparent 100%);
     }
-    #hudTop { display:flex; justify-content:space-between; align-items:flex-start; }
-    #hudLeft { pointer-events:none; }
+    #hudTop { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+    #hudLeft { pointer-events:none; flex:1; min-width:0; }
+    #hudRight {
+      display:flex; flex-direction:column; align-items:flex-end; gap:6px;
+      flex-shrink:0; pointer-events:none;
+    }
+    #timeDisplay {
+      font-size:clamp(15px,4.2vw,18px); color:#fff;
+      letter-spacing:1px; text-shadow:0 1px 4px #000;
+      padding:4px 10px; border-radius:20px;
+      background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.2);
+      font-variant-numeric:tabular-nums;
+    }
+    #timeDisplay.time-warn { color:#ffb74d; border-color:rgba(255,183,77,.5); }
+    #timeDisplay.time-crit {
+      color:#ff5252; border-color:rgba(255,82,82,.6);
+      animation:timePulse .6s ease-in-out infinite alternate;
+    }
+    @keyframes timePulse {
+      from { box-shadow:0 0 0 rgba(255,82,82,0); }
+      to   { box-shadow:0 0 14px rgba(255,82,82,.55); }
+    }
     #stageName { font-size:clamp(11px,3vw,13px); color:#ffe066; letter-spacing:2px; text-shadow:0 1px 4px #000; }
     #scoreDisplay {
       font-size:clamp(44px,14vw,68px); line-height:1; color:#fff;
@@ -66,7 +91,7 @@
 
     /* Mute button */
     #muteBtn {
-      width:40px; height:40px; margin:4px 0 0;
+      width:40px; height:40px; margin:0;
       border:1.5px solid rgba(255,255,255,.3);
       border-radius:50%;
       background:rgba(0,0,0,.35);
@@ -321,7 +346,10 @@
           <div id="comboDisplay"></div>
         </div>
       </div>
-      <button id="muteBtn" title="소리 켜기/끄기">🔊</button>
+      <div id="hudRight">
+        <div id="timeDisplay">⏱ 2:30</div>
+        <button id="muteBtn" title="소리 켜기/끄기">🔊</button>
+      </div>
     </div>
   </div>
 
@@ -344,6 +372,7 @@
       <button class="record-btn" id="recordBtn">🏆 기록보기</button>
     </div>
     <div class="key-guide">→/X 올라가기 &nbsp;|&nbsp; ←/Z 방향전환</div>
+    <div class="key-guide" style="margin-top:6px">⏱ 한 판 <strong style="color:rgba(255,230,102,.85)">2분 30초</strong> (타임어택)</div>
     <div style="text-align:center; margin-top:14px; font-size:13px; color:rgba(255,255,255,.45); letter-spacing:2px;">- 정보쌤 제작 -</div>
   </div>
 
@@ -364,7 +393,7 @@
   <!-- Game Over -->
   <div class="panel hidden" id="gameOverScreen">
     <div class="go-panel">
-      <div class="go-title">💔 GAME OVER</div>
+      <div class="go-title" id="goTitle">💔 GAME OVER</div>
       <div class="go-score-label">최종 점수</div>
       <div class="go-score-value" id="finalScore">0</div>
       <div class="go-stage" id="finalStage"></div>
@@ -567,6 +596,8 @@ const STAIR_W = 92;
 const STAIR_H = 14;
 const STAIR_COUNT = 14;
 const LS_KEY  = 'stairs_v5';
+const COMBO_BONUS_EVERY = 5; // 연속 성공 N회마다 추가 점수 +1
+const GAME_TIME_LIMIT   = 150; // 타임어택 (초) — 게임 중독 방지
 
 const STAGES = [
   { name:'🏫 초등학교', min:0,   skyA:'#3AABEF', skyB:'#B8E8FF', gnd:'#56C832', gnd2:'#3A9620', theme:0 },
@@ -594,6 +625,9 @@ let particles  = [];
 let shakeMag   = 0;
 let stageFlash = 0;
 let savedScore = null;
+let timeLeft       = GAME_TIME_LIMIT;
+let timerLastTs    = 0;
+let gameOverReason = 'lives'; // 'lives' | 'time'
 
 // 캐릭터 이미지 preload
 const charImg = new Image();
@@ -626,10 +660,14 @@ resize();
    START GAME
 ───────────────────────────────────────── */
 function startGame() {
+  if (gs === 'playing' || gs === 'ending') return;
   getAC(); // Initialize audio context on user gesture
   sfxStart();
   score = 0; lives = 3; combo = 0; stageIdx = 0;
   stageFlash = 0; shakeMag = 0; savedScore = null;
+  timeLeft = GAME_TIME_LIMIT;
+  timerLastTs = 0;
+  gameOverReason = 'lives';
   particles = [];
 
   pReal.x   = W / 2;
@@ -690,8 +728,13 @@ function move(direction) { // -1 = 방향전환(left btn), 1 = 앞으로(right b
 
     pVisual.hop = -28;  // 높이 올려서 깡총 더 잘 보이게
     sfxStep(combo);
-    if (combo > 0 && combo % 5 === 0) sfxComboMilestone(); // Every 5 combo: special sound
-    spawnParticles(pVisual.x, pVisual.y, '#ff69b4', 9);
+    if (combo % COMBO_BONUS_EVERY === 0) {
+      score++;
+      sfxComboMilestone();
+      spawnParticles(pVisual.x, pVisual.y, '#ffe066', 14);
+    } else {
+      spawnParticles(pVisual.x, pVisual.y, '#ff69b4', 9);
+    }
     checkStage();
     updateHUD();
   } else {
@@ -704,11 +747,47 @@ function move(direction) { // -1 = 방향전환(left btn), 1 = 앞으로(right b
     updateHUD();
 
     if (lives <= 0) {
-      gs = 'ending';
-      stopBGM();
-      setTimeout(showGameOver, 450);
+      endGame('lives');
     }
   }
+}
+
+function formatTime(sec) {
+  const s = Math.max(0, Math.ceil(sec));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${String(r).padStart(2, '0')}`;
+}
+
+function updateTimeHUD() {
+  const el  = document.getElementById('timeDisplay');
+  const sec = Math.ceil(timeLeft);
+  el.textContent = `⏱ ${formatTime(sec)}`;
+  el.classList.toggle('time-warn', sec <= 30 && sec > 10);
+  el.classList.toggle('time-crit', sec <= 10);
+}
+
+function updateTimer(ts) {
+  if (gs !== 'playing') return;
+  if (!timerLastTs) timerLastTs = ts;
+  timeLeft -= (ts - timerLastTs) / 1000;
+  timerLastTs = ts;
+
+  if (timeLeft <= 0) {
+    timeLeft = 0;
+    updateTimeHUD();
+    endGame('time');
+    return;
+  }
+  updateTimeHUD();
+}
+
+function endGame(reason) {
+  if (gs !== 'playing') return;
+  gameOverReason = reason;
+  gs = 'ending';
+  stopBGM();
+  setTimeout(() => showGameOver(reason), 450);
 }
 
 /* ─────────────────────────────────────────
@@ -732,22 +811,33 @@ function updateHUD() {
   document.getElementById('scoreDisplay').textContent = score;
   document.getElementById('livesDisplay').textContent =
     '❤️'.repeat(lives) + '🖤'.repeat(3 - lives);
-  document.getElementById('comboDisplay').textContent =
-    combo >= 3 ? `🔥 ${combo} COMBO!` : '';
+  let comboText = '';
+  if (combo >= COMBO_BONUS_EVERY && combo % COMBO_BONUS_EVERY === 0) {
+    comboText = `🔥 ${combo} COMBO! +1 보너스`;
+  } else if (combo >= 3) {
+    comboText = `🔥 ${combo} COMBO!`;
+  }
+  document.getElementById('comboDisplay').textContent = comboText;
+  if (gs === 'playing') updateTimeHUD();
 }
 
 /* ─────────────────────────────────────────
    GAME OVER / RANKING
 ───────────────────────────────────────── */
-function showGameOver() {
+function showGameOver(reason) {
   gs = 'gameover';
   stopBGM();
   sfxGameOver();
   hide('hud'); hide('controls');
   show('gameOverScreen');
+
+  const isTime = reason === 'time';
+  document.getElementById('goTitle').textContent =
+    isTime ? '⏱ 시간 종료!' : '💔 GAME OVER';
   document.getElementById('finalScore').textContent = score;
-  document.getElementById('finalStage').textContent =
-    `도달 스테이지: ${STAGES[stageIdx].name}`;
+  document.getElementById('finalStage').textContent = isTime
+    ? `도달 스테이지: ${STAGES[stageIdx].name} · 제한 시간 2분 30초`
+    : `도달 스테이지: ${STAGES[stageIdx].name}`;
 
   show('inputArea');
   document.getElementById('playerName').value = '';
@@ -765,9 +855,66 @@ function showGameOver() {
 document.getElementById('saveBtn').addEventListener('click', saveScore);
 document.getElementById('retryBtn').addEventListener('click', resetGame);
 
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function sanitizeName(raw) {
+  const s = String(raw).trim().slice(0, 6).replace(/[<>&"'`]/g, '');
+  return s || '익명';
+}
+
+async function loadRankings() {
+  try {
+    const res  = await fetch(`${DB_URL}/rankings.json`);
+    const data = await res.json();
+    if (data && typeof data === 'object') {
+      const rankings = Object.values(data);
+      rankings.sort((a, b) => b.score - a.score);
+      return rankings.slice(0, 10);
+    }
+    return [];
+  } catch (e) {
+    console.warn('Firebase 로드 실패, 로컬 랭킹 표시:', e);
+    return JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+  }
+}
+
+function rankRowHtml(r, i, { myName, myScore } = {}) {
+  const isMe = myName && r.name === myName && r.score === myScore;
+  const medals  = ['🥇', '🥈', '🥉'];
+  const rkClass = ['rk1', 'rk2', 'rk3'];
+  const medalEl = i < 3
+    ? `<span class="${rkClass[i]}">${medals[i]}</span>`
+    : `<span>${i + 1}</span>`;
+  const name  = escapeHtml(r.name ?? '');
+  const date  = escapeHtml(r.date ?? '');
+  const score = Number(r.score) || 0;
+  return `<tr${isMe ? ' class="mine"' : ''}>
+    <td>${medalEl}</td>
+    <td>${name}</td>
+    <td><strong>${score}</strong></td>
+    <td style="font-size:11px;opacity:.65">${date}</td>
+  </tr>`;
+}
+
+function renderRankTableBody(tbodyId, rankings, opts = {}) {
+  const empty =
+    `<tr><td colspan="4" style="text-align:center;padding:14px;color:rgba(255,255,255,.35)">아직 기록이 없어요! 첫 주인공이 되세요 🏆</td></tr>`;
+  document.getElementById(tbodyId).innerHTML = rankings.length
+    ? rankings.map((r, i) => rankRowHtml(r, i, opts)).join('')
+    : empty;
+}
+
 async function saveScore() {
   const nameEl = document.getElementById('playerName');
-  const name   = nameEl.value.trim() || '익명';
+  const name   = sanitizeName(nameEl.value);
+  nameEl.value = name;
   const now    = new Date();
   const fmt    = (n) => String(n).padStart(2,'0');
   const date   = `${fmt(now.getMonth()+1)}/${fmt(now.getDate())} ${fmt(now.getHours())}:${fmt(now.getMinutes())}`;
@@ -799,51 +946,24 @@ async function saveScore() {
 }
 
 async function showRanking(myName, myScore) {
-  // 로딩 표시
   if (!myName) {
     document.getElementById('rankList').innerHTML =
       `<tr><td colspan="4" style="text-align:center;padding:14px;color:rgba(255,255,255,.4)">📡 불러오는 중...</td></tr>`;
   }
 
-  let rankings = [];
-  try {
-    // Firebase REST API – index 없이 전체 조회 후 JS에서 정렬
-    const res  = await fetch(`${DB_URL}/rankings.json`);
-    const data = await res.json();
-    if (data && typeof data === 'object') {
-      rankings = Object.values(data);
-    }
-    rankings.sort((a,b) => b.score - a.score);
-    rankings = rankings.slice(0, 10);
-  } catch(e) {
-    console.warn('Firebase 로드 실패, 로컬 랭킹 표시:', e);
-    rankings = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
-  }
-
+  const rankings = await loadRankings();
   renderRankTable(rankings, myName, myScore);
 }
 
 function renderRankTable(rankings, myName, myScore) {
   let myRank = -1;
-  const medals  = ['🥇','🥈','🥉'];
-  const rkClass = ['rk1','rk2','rk3'];
+  if (myName) {
+    rankings.forEach((r, i) => {
+      if (myRank < 0 && r.name === myName && r.score === myScore) myRank = i + 1;
+    });
+  }
 
-  document.getElementById('rankList').innerHTML = rankings.length
-    ? rankings.map((r, i) => {
-        const isMe = myName && r.name === myName && r.score === myScore;
-        if (isMe && myRank < 0) myRank = i + 1;
-        const medalEl = i < 3
-          ? `<span class="${rkClass[i]}">${medals[i]}</span>`
-          : `<span>${i+1}</span>`;
-        return `<tr${isMe ? ' class="mine"' : ''}>
-          <td>${medalEl}</td>
-          <td>${r.name}</td>
-          <td><strong>${r.score}</strong></td>
-          <td style="font-size:11px;opacity:.65">${r.date}</td>
-        </tr>`;
-      }).join('')
-    : `<tr><td colspan="4" style="text-align:center;padding:14px;color:rgba(255,255,255,.35)">아직 기록이 없어요! 첫 주인공이 되세요 🏆</td></tr>`;
-
+  renderRankTableBody('rankList', rankings, { myName, myScore });
   document.getElementById('myRankText').textContent =
     myRank > 0 ? `✨ 내 순위: ${myRank}위` : '';
 }
@@ -1457,195 +1577,6 @@ function drawHopLeg(hipY, xOff, thighAngle, kneeAngle) {
   ctx.restore();
 }
 
-/* ── 아래는 기존 캔버스 드로잉 코드 제거됨 (char.png로 교체) ── */
-function _unused_drawCharacter_old(x, y, dir, wF, hop) {
-  ctx.save();
-  ctx.translate(x, y + hop);
-  if (dir === -1) ctx.scale(-1, 1);
-  ctx.scale(0.78, 0.78);
-  const sw = Math.sin(wF) * 9;
-  ctx.fillStyle = 'rgba(0,0,0,.2)';
-  ctx.beginPath(); ctx.ellipse(0, 6, 15, 4, 0, 0, Math.PI*2); ctx.fill();
-
-  // ── 뒷다리 (남색 바지)
-  ctx.save();
-  ctx.translate(-2, 4); ctx.rotate(-sw * .026);
-  ctx.fillStyle = '#1e2d82';
-  ctx.fillRect(-4, -20, 8, 44);
-  ctx.fillStyle = '#2840a0'; // 접힌 바지단
-  ctx.fillRect(-5, 20, 10, 7);
-  ctx.fillStyle = '#ddd'; // 양말
-  ctx.fillRect(-4, 26, 8, 4);
-  ctx.fillStyle = '#222';
-  ctx.beginPath(); ctx.roundRect(-5, 29, 13, 8, [0,0,4,4]); ctx.fill();
-  ctx.restore();
-
-  // ── 앞다리 (남색 바지)
-  ctx.save();
-  ctx.translate(2, 4); ctx.rotate(sw * .026);
-  ctx.fillStyle = '#253598';
-  ctx.fillRect(-4, -20, 8, 45);
-  ctx.fillStyle = '#3050c0'; // 접힌 바지단
-  ctx.fillRect(-5, 21, 10, 7);
-  ctx.fillStyle = '#f0f0f0'; // 양말
-  ctx.fillRect(-4, 27, 8, 4);
-  ctx.fillStyle = '#111';
-  ctx.beginPath(); ctx.roundRect(-4, 30, 16, 8, [0,0,5,5]); ctx.fill();
-  ctx.restore();
-
-  // ── 뒷팔 (회색 후드 소매)
-  ctx.save(); ctx.translate(-6, -38); ctx.rotate(-0.12 - sw * .018);
-  ctx.fillStyle = '#888';
-  ctx.fillRect(-3, 0, 7, 20);
-  ctx.fillStyle = '#FFCC80'; ctx.fillRect(-3, 18, 7, 7);
-  ctx.restore();
-
-  // ── 후드티 몸통 (회색)
-  ctx.fillStyle = '#909090';
-  ctx.beginPath(); ctx.roundRect(-11, -44, 24, 32, [5,10,2,2]); ctx.fill();
-  // 앞판 (약간 밝게)
-  ctx.fillStyle = '#9a9a9a';
-  ctx.beginPath(); ctx.roundRect(4, -44, 9, 32, [0,7,2,0]); ctx.fill();
-  // 지퍼 선
-  ctx.strokeStyle = '#5a5a5a'; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(4, -44); ctx.lineTo(4, -13); ctx.stroke();
-  // 지퍼 손잡이
-  ctx.fillStyle = '#4a4a4a';
-  ctx.fillRect(2, -30, 4, 5);
-  ctx.fillStyle = '#aaa'; ctx.fillRect(2.5, -29.5, 3, 1);
-
-  // ── 앞팔
-  const aSwing = Math.sin(wF + Math.PI) * .25;
-  ctx.save(); ctx.translate(11, -38); ctx.rotate(0.22 + aSwing);
-  ctx.fillStyle = '#909090';
-  ctx.fillRect(-3, 0, 7, 20);
-  ctx.fillStyle = '#FFCC80'; ctx.fillRect(-3, 18, 7, 7);
-  ctx.restore();
-
-  // ── 후드 (목 뒤쪽에 걸쳐진 부분)
-  ctx.fillStyle = '#787878';
-  ctx.beginPath();
-  ctx.moveTo(-10, -50);
-  ctx.bezierCurveTo(-17, -55, -19, -68, -14, -76);
-  ctx.bezierCurveTo(-10, -82, -4, -81, -2, -76);
-  ctx.bezierCurveTo(-7, -70, -11, -60, -9, -52);
-  ctx.closePath(); ctx.fill();
-
-  // ── 목
-  ctx.fillStyle = '#FFCC80'; ctx.fillRect(-2, -54, 8, 12);
-
-  // ── 포니테일 (얼굴보다 먼저 그림)
-  const sway = Math.sin(wF * .5) * 5;
-  ctx.fillStyle = '#1a1a2e';
-  ctx.save();
-  ctx.translate(-7, -85);
-  ctx.rotate(-0.08 + sway * .02);
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.bezierCurveTo(-3, -6, -11, -8, -16, -2);
-  ctx.bezierCurveTo(-22, 5, -21, 18, -16, 28);
-  ctx.bezierCurveTo(-11, 36, -4, 36, -1, 28);
-  ctx.bezierCurveTo(-5, 18, -9, 8, -5, 0);
-  ctx.closePath(); ctx.fill();
-  // 포니테일 광택
-  ctx.fillStyle = 'rgba(255,255,255,.07)';
-  ctx.beginPath(); ctx.moveTo(-2, 2); ctx.bezierCurveTo(-4, 10, -4, 20, -2, 28);
-  ctx.bezierCurveTo(-1, 20, 0, 10, -2, 2); ctx.fill();
-  ctx.restore();
-
-  // ── 머리카락 (검정, 윗부분)
-  ctx.fillStyle = '#1a1a2e';
-  ctx.beginPath();
-  ctx.moveTo(13, -70);
-  ctx.bezierCurveTo(16, -82, 12, -98, 2, -99);
-  ctx.bezierCurveTo(-8, -100, -18, -92, -18, -83);
-  ctx.bezierCurveTo(-19, -75, -15, -70, -9, -68);
-  ctx.bezierCurveTo(-4, -66, 2, -66, 6, -70);
-  ctx.bezierCurveTo(10, -74, 12, -72, 13, -70);
-  ctx.fill();
-
-  // ── 얼굴 (바넬로피 스타일 – 둥글고 통통한 볼)
-  ctx.fillStyle = '#FFCC80';
-  ctx.beginPath(); ctx.ellipse(2, -66, 14, 17, 0, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(11, -64, 7, 12, 0.1, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(15, -60, 5, 4.5, 0, 0, Math.PI*2); ctx.fill(); // 통통한 볼
-
-  // 귀
-  ctx.fillStyle = '#f0b87a';
-  ctx.beginPath(); ctx.ellipse(-9, -66, 4.5, 5.5, 0.1, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#e0987a';
-  ctx.beginPath(); ctx.ellipse(-9, -66, 2, 3, 0.1, 0, Math.PI*2); ctx.fill();
-
-  // ── 앞머리 (얼굴 위)
-  ctx.fillStyle = '#1a1a2e';
-  ctx.beginPath();
-  ctx.moveTo(-4, -80);
-  ctx.bezierCurveTo(2, -89, 16, -86, 18, -77);
-  ctx.bezierCurveTo(19, -70, 15, -65, 8, -63);
-  ctx.bezierCurveTo(4, -62, 0, -64, 0, -68);
-  ctx.bezierCurveTo(5, -72, 11, -75, 9, -81);
-  ctx.fill();
-  // 옆머리
-  ctx.beginPath();
-  ctx.moveTo(12, -74);
-  ctx.bezierCurveTo(18, -70, 20, -63, 17, -57);
-  ctx.bezierCurveTo(15, -53, 11, -54, 11, -57);
-  ctx.bezierCurveTo(13, -62, 16, -68, 12, -74);
-  ctx.fill();
-
-  // ── 핑크 리본 (포니테일 묶음)
-  ctx.save();
-  ctx.translate(-7, -87);
-  ctx.fillStyle = '#e91e63';
-  ctx.beginPath(); ctx.ellipse(-7, 0, 7, 4.5, 0.25, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(5, -1, 5.5, 4, -0.25, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#c2185b';
-  ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,.4)';
-  ctx.beginPath(); ctx.arc(-1, -1.5, 1.5, 0, Math.PI*2); ctx.fill();
-  ctx.restore();
-
-  // ── 코 (작은 곡선, 튀어나오지 않게)
-  ctx.strokeStyle = '#c07858'; ctx.lineWidth = 1.4; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(16, -65); ctx.quadraticCurveTo(19, -63, 16, -61); ctx.stroke();
-
-  // ── 입 (넓고 환한 미소)
-  ctx.fillStyle = '#fff';
-  ctx.beginPath();
-  ctx.moveTo(9, -57);
-  ctx.bezierCurveTo(11, -50, 21, -50, 22, -57);
-  ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(8, -58); ctx.bezierCurveTo(11, -64, 20, -64, 23, -58); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(9, -57); ctx.bezierCurveTo(11, -50, 21, -50, 22, -57); ctx.stroke();
-
-  // ── 눈 (크고 다크 브라운)
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.ellipse(12, -69, 5.5, 7, 0.08, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#5c2d0a';
-  ctx.beginPath(); ctx.ellipse(12.5, -69, 4.5, 6.5, 0.08, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#1a0800';
-  ctx.beginPath(); ctx.ellipse(13, -69, 3, 5, 0.08, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.ellipse(10.5, -72, 2.2, 2.8, 0, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,.75)';
-  ctx.beginPath(); ctx.arc(15, -67, 1.2, 0, Math.PI*2); ctx.fill();
-  ctx.strokeStyle = '#1a0800'; ctx.lineWidth = 2.2;
-  ctx.beginPath(); ctx.moveTo(6.5,-75); ctx.bezierCurveTo(9,-78,14,-78,17.5,-74); ctx.stroke();
-  ctx.lineWidth = 1.2;
-  ctx.beginPath(); ctx.moveTo(7,-63); ctx.bezierCurveTo(10,-61,14,-62,17,-64); ctx.stroke();
-
-  // 눈썹
-  ctx.strokeStyle = '#1a1a2e'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(6,-79); ctx.quadraticCurveTo(12,-83,18,-78); ctx.stroke();
-
-  // 볼 홍조
-  ctx.fillStyle = 'rgba(255,90,80,.35)';
-  ctx.beginPath(); ctx.ellipse(17, -60, 6.5, 3.5, 0, 0, Math.PI*2); ctx.fill();
-
-  ctx.restore();
-}
-
 /* ─────────────────────────────────────────
    START SCREEN – tiny character preview
 ───────────────────────────────────────── */
@@ -1730,6 +1661,7 @@ function loop(ts) {
     drawStartChar();
 
   } else if (gs === 'playing' || gs === 'ending' || gs === 'gameover') {
+    if (gs === 'playing') updateTimer(ts);
     updateVisual();
     applyShake();
 
@@ -1769,55 +1701,39 @@ function flashBtn(id) {
 function show(id) { document.getElementById(id).classList.remove('hidden'); }
 function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
+/** 터치 후 click 중복 호출 방지 (모바일) */
+function bindTap(el, handler) {
+  let blockClick = false;
+  el.addEventListener('touchstart', e => {
+    e.preventDefault();
+    blockClick = true;
+    handler(e);
+    setTimeout(() => { blockClick = false; }, 400);
+  }, { passive: false });
+  el.addEventListener('click', e => {
+    if (blockClick) {
+      e.preventDefault();
+      return;
+    }
+    handler(e);
+  });
+}
+
 /* ─────────────────────────────────────────
    EVENT LISTENERS
 ───────────────────────────────────────── */
-document.getElementById('startBtn').addEventListener('click', startGame);
-document.getElementById('startBtn').addEventListener('touchstart', e => { e.preventDefault(); startGame(); });
-document.getElementById('muteBtn').addEventListener('click', toggleMute);
-document.getElementById('muteBtn').addEventListener('touchstart', e => { e.preventDefault(); toggleMute(); });
-
-// 기록보기
-document.getElementById('recordBtn').addEventListener('click', openRecords);
-document.getElementById('recordBtn').addEventListener('touchstart', e => { e.preventDefault(); openRecords(); });
-document.getElementById('backBtn').addEventListener('click', () => hide('recordScreen'));
-document.getElementById('backBtn').addEventListener('touchstart', e => { e.preventDefault(); hide('recordScreen'); });
+bindTap(document.getElementById('startBtn'), startGame);
+bindTap(document.getElementById('muteBtn'), toggleMute);
+bindTap(document.getElementById('recordBtn'), openRecords);
+bindTap(document.getElementById('backBtn'), () => hide('recordScreen'));
 
 async function openRecords() {
   show('recordScreen');
   document.getElementById('mainRankList').innerHTML =
     `<tr><td colspan="4" style="text-align:center;padding:16px;color:rgba(255,255,255,.4)">📡 불러오는 중...</td></tr>`;
 
-  let rankings = [];
-  try {
-    const res  = await fetch(`${DB_URL}/rankings.json`);
-    const data = await res.json();
-    if (data && typeof data === 'object') {
-      rankings = Object.values(data);
-    }
-    rankings.sort((a, b) => b.score - a.score);
-    rankings = rankings.slice(0, 10);
-  } catch(e) {
-    document.getElementById('mainRankList').innerHTML =
-      `<tr><td colspan="4" style="text-align:center;padding:16px;color:rgba(255,100,100,.6)">불러오기 실패 😢</td></tr>`;
-    return;
-  }
-
-  const medals  = ['🥇','🥈','🥉'];
-  const rkClass = ['rk1','rk2','rk3'];
-  document.getElementById('mainRankList').innerHTML = rankings.length
-    ? rankings.map((r, i) => {
-        const medalEl = i < 3
-          ? `<span class="${rkClass[i]}">${medals[i]}</span>`
-          : `<span>${i+1}</span>`;
-        return `<tr>
-          <td>${medalEl}</td>
-          <td>${r.name}</td>
-          <td><strong>${r.score}</strong></td>
-          <td style="font-size:11px;opacity:.65">${r.date}</td>
-        </tr>`;
-      }).join('')
-    : `<tr><td colspan="4" style="text-align:center;padding:16px;color:rgba(255,255,255,.35)">아직 기록이 없어요! 첫 주인공이 되세요 🏆</td></tr>`;
+  const rankings = await loadRankings();
+  renderRankTableBody('mainRankList', rankings);
 }
 
 const btnL = document.getElementById('btnL');
