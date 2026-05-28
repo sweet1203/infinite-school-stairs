@@ -1,5 +1,5 @@
 /* 여고쌤의 무한한 학교계단 - Service Worker */
-const CACHE = 'school-stairs-v9';
+const CACHE = 'school-stairs-v10';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const ASSETS = [
   './icon.svg',
   './icon-192.png',
   './icon-512.png',
+  './char.png',
   'https://fonts.googleapis.com/css2?family=Jua&display=swap',
 ];
 
