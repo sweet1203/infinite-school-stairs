@@ -688,7 +688,7 @@ function move(direction) { // -1 = 방향전환(left btn), 1 = 앞으로(right b
     addStair();
     stairs.forEach(s => s.y += STEP_Y);
 
-    pVisual.hop = -20;
+    pVisual.hop = -28;  // 높이 올려서 깡총 더 잘 보이게
     sfxStep(combo);
     if (combo > 0 && combo % 5 === 0) sfxComboMilestone(); // Every 5 combo: special sound
     spawnParticles(pVisual.x, pVisual.y, '#ff69b4', 9);
@@ -1411,47 +1411,47 @@ function drawCharacter(x, y, dir, wF, hop) {
 }
 
 function drawHopLegs(hipY, hop, scaleX) {
-  const inAir = hop < -5;
+  // airT: hop 값에 비례해 0(착지) → 1(최고점)으로 부드럽게 변함
+  const airT = Math.max(0, Math.min(1, -hop / 25));  // hop -28 기준으로 정규화
 
-  // 공중 : 무릎 앞으로 접힘 (thighAngle), 종아리 뒤로 (kneeAngle)
-  // 착지 : 다리 거의 쭉 펴거나 살짝 앉은 자세
-  const thighAngle = inAir ?  0.30 : 0.05;   // 허벅지 앞으로 들기
-  const kneeAngle  = inAir ? -0.55 : 0.08;   // 무릎(종아리) 굽힘
+  // 공중: 허벅지 앞으로 들리고 무릎 굽힘 → 착지: 다리 쭉 펴거나 살짝 스쿼트
+  const thighAngle = airT * 0.55;    // 0→ 앞으로 들기 (최대 ~31°)
+  const kneeAngle  = -(airT * 0.85); // 0→ 종아리 뒤로 접힘 (최대 ~49°)
 
-  // 왼발, 오른발 동시에 같은 포즈
-  [-5, 4].forEach(xOff => {
+  // 왼발(-7), 오른발(+7) 동시 같은 포즈
+  [-7, 7].forEach(xOff => {
     drawHopLeg(hipY, xOff * scaleX, thighAngle, kneeAngle);
   });
 }
 
 function drawHopLeg(hipY, xOff, thighAngle, kneeAngle) {
-  const legLen  = 13;
-  const calfLen = 10;
-  const shoeW   = 10;
+  const legLen  = 16;   // 허벅지 길이 (더 길게)
+  const calfLen = 13;   // 종아리 길이
+  const shoeW   = 13;
 
   ctx.save();
   ctx.translate(xOff, hipY);
-  ctx.rotate(thighAngle);   // 허벅지 기울기
+  ctx.rotate(thighAngle);
 
   // 허벅지 (피부색)
   ctx.fillStyle = '#f5c090';
-  ctx.beginPath(); ctx.roundRect(-3, 0, 6, legLen, 3); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, legLen, 3); ctx.fill();
 
   // 종아리 + 신발
   ctx.save();
   ctx.translate(0, legLen);
-  ctx.rotate(kneeAngle);    // 무릎 굽힘
+  ctx.rotate(kneeAngle);
 
   // 종아리 / 흰 양말
   ctx.fillStyle = '#f0f0f0';
-  ctx.beginPath(); ctx.roundRect(-3, 0, 6, calfLen, 2); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, calfLen, 2); ctx.fill();
 
-  // 신발
+  // 신발 (검정)
   ctx.fillStyle = '#222';
-  ctx.beginPath(); ctx.roundRect(-4, calfLen - 1, shoeW, 5, [1, 3, 3, 1]); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(-5, calfLen - 1, shoeW, 6, [1, 3, 3, 1]); ctx.fill();
   // 신발 광택
-  ctx.fillStyle = 'rgba(255,255,255,.15)';
-  ctx.beginPath(); ctx.roundRect(-3, calfLen, 5, 2, 1); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.18)';
+  ctx.beginPath(); ctx.roundRect(-4, calfLen, 6, 2, 1); ctx.fill();
 
   ctx.restore();
   ctx.restore();
