@@ -1400,6 +1400,8 @@ function drawCharacter(x, y, dir, wF, hop) {
   drawLeg(hipY,  6, -swing, scaleX);
   // 앞다리
   drawLeg(hipY, -4,  swing, scaleX);
+
+  ctx.restore(); // ← 이게 빠져서 매 프레임 회전이 누적됐음!
 }
 
 function drawLeg(hipY, xOff, angle, scaleX) {
