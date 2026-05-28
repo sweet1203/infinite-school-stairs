@@ -1353,8 +1353,8 @@ function drawCharacter(x, y, dir, wF, hop) {
   const turnFlatX = 1 - Math.sin(ts * Math.PI) * 0.45;  // 전환 순간 X가 납작해짐
   const turnPuffY = 1 + Math.sin(ts * Math.PI) * 0.15;  // 동시에 Y가 약간 늘어남
 
-  // ── 좌우 방향 반전 (dir=1→오른쪽, dir=-1→왼쪽으로 뒤집기)
-  ctx.scale(dir * turnFlatX, turnPuffY);
+  // ── 좌우 방향 반전 (-dir: 이미지 기본 방향이 왼쪽이라 반전)
+  ctx.scale(-dir * turnFlatX, turnPuffY);
 
   // ── 진행 방향으로 살짝 앞으로 기울이기 (scale 후라서 항상 전방 기울기)
   ctx.rotate(0.06);
@@ -1401,41 +1401,52 @@ function drawCharacter(x, y, dir, wF, hop) {
   );
 
   // ─────────────────────────────────────
-  //  하반신: 캔버스로 다리 애니메이션
+  //  하반신: 깡총 점프 다리 (양발 동시)
   // ─────────────────────────────────────
-  const swingAmp = onGround ? 22 : 6;                        // 점프 중엔 다리 거의 안 흔들림
-  const swing    = Math.sin(wF * 1.5) * swingAmp * (Math.PI / 180);
-
-  // 뒷다리 (z-order: 먼저 그림)
-  drawLeg(hipY,  6, -swing, scaleX);
-  // 앞다리
-  drawLeg(hipY, -4,  swing, scaleX);
+  //  hop < -5 : 공중 (무릎 접어 발 들리기)
+  //  hop >= -5: 착지 (다리 펴거나 살짝 구부림)
+  drawHopLegs(hipY, hop, scaleX);
 
   ctx.restore();
 }
 
-function drawLeg(hipY, xOff, angle, scaleX) {
-  const legLen  = 14;  // 허벅지 길이
-  const calfLen = 10;  // 종아리 길이
-  const shoeW   = 11;
+function drawHopLegs(hipY, hop, scaleX) {
+  const inAir = hop < -5;
+
+  // 공중 : 무릎 앞으로 접힘 (thighAngle), 종아리 뒤로 (kneeAngle)
+  // 착지 : 다리 거의 쭉 펴거나 살짝 앉은 자세
+  const thighAngle = inAir ?  0.30 : 0.05;   // 허벅지 앞으로 들기
+  const kneeAngle  = inAir ? -0.55 : 0.08;   // 무릎(종아리) 굽힘
+
+  // 왼발, 오른발 동시에 같은 포즈
+  [-5, 4].forEach(xOff => {
+    drawHopLeg(hipY, xOff * scaleX, thighAngle, kneeAngle);
+  });
+}
+
+function drawHopLeg(hipY, xOff, thighAngle, kneeAngle) {
+  const legLen  = 13;
+  const calfLen = 10;
+  const shoeW   = 10;
 
   ctx.save();
-  ctx.translate(xOff * scaleX, hipY);
-  ctx.rotate(angle);
+  ctx.translate(xOff, hipY);
+  ctx.rotate(thighAngle);   // 허벅지 기울기
 
   // 허벅지 (피부색)
   ctx.fillStyle = '#f5c090';
-  ctx.beginPath(); ctx.roundRect(-3.5, 0, 7, legLen, 3); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(-3, 0, 6, legLen, 3); ctx.fill();
 
-  // 종아리 / 양말 (흰색)
+  // 종아리 + 신발
   ctx.save();
   ctx.translate(0, legLen);
-  ctx.rotate(angle * 0.45);  // 무릎 자연스럽게 굽히기
+  ctx.rotate(kneeAngle);    // 무릎 굽힘
 
+  // 종아리 / 흰 양말
   ctx.fillStyle = '#f0f0f0';
   ctx.beginPath(); ctx.roundRect(-3, 0, 6, calfLen, 2); ctx.fill();
 
-  // 신발 (검정)
+  // 신발
   ctx.fillStyle = '#222';
   ctx.beginPath(); ctx.roundRect(-4, calfLen - 1, shoeW, 5, [1, 3, 3, 1]); ctx.fill();
   // 신발 광택
