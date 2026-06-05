@@ -1764,16 +1764,24 @@ function drawBoostCharacter(x, y, dir, wF, hop) {
   });
   ctx.restore();
 
-  // ── 🔥 콤보 머리 위 표시 (크고 선명하게)
+  ctx.restore();
+  drawBoostComboLabel(x, y + hop);
+}
+
+function drawBoostComboLabel(x, y) {
   ctx.save();
+  ctx.translate(x, y);
   const fontSize = 12 + Math.min(combo, 50) * 0.22;
   ctx.font = `bold ${fontSize}px sans-serif`;
   ctx.textAlign = 'center';
-  ctx.shadowBlur = 14; ctx.shadowColor = '#ff6600';
+  ctx.textBaseline = 'middle';
+  ctx.shadowBlur = 14;
+  ctx.shadowColor = '#ff6600';
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(70,20,0,.8)';
   ctx.fillStyle = '#ffe066';
+  ctx.strokeText(`🔥${combo}`, 0, -96);
   ctx.fillText(`🔥${combo}`, 0, -96);
-  ctx.restore();
-
   ctx.restore();
 }
 
