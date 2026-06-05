@@ -1519,26 +1519,17 @@ function drawNormalCharacter(x, y, dir, wF, hop) {
   const walkBob  = onGround ? Math.sin(wF * 1.1) * 1.0 : 0;
 
   // ─────────────────────────────────────
-  //  상반신: char.png를 허리(78%)까지만 표시
+  //  char.png 전체 표시 (치마·강아지 안 잘리게)
   // ─────────────────────────────────────
-  const CROP    = 0.78;          // 이미지의 상위 78%만 사용
-  const bodyH   = baseH * CROP * scaleY;
-  const bodyW   = baseW * scaleX;
-  const topY    = -baseH * scaleY + walkBob;  // 머리 꼭대기 Y
-  const hipY    = topY + bodyH;               // 허리(다리 시작) Y ≈ -25
+  const bodyH = baseH * scaleY;
+  const bodyW = baseW * scaleX;
+  const topY  = -baseH * scaleY + walkBob;  // 머리 꼭대기 Y
 
   ctx.drawImage(
     charImg,
-    0, 0, charImg.naturalWidth, charImg.naturalHeight * CROP,  // 소스: 상위 78%
-    -bodyW / 2, topY, bodyW, bodyH                              // 목적지
+    0, 0, charImg.naturalWidth, charImg.naturalHeight,  // 소스: 전체
+    -bodyW / 2, topY, bodyW, bodyH                       // 목적지
   );
-
-  // ─────────────────────────────────────
-  //  하반신: 깡총 점프 다리 (양발 동시)
-  // ─────────────────────────────────────
-  //  hop < -5 : 공중 (무릎 접어 발 들리기)
-  //  hop >= -5: 착지 (다리 펴거나 살짝 구부림)
-  drawHopLegs(hipY, hop, scaleX);
 
   ctx.restore();
 }
