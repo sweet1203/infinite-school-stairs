@@ -4,7 +4,7 @@
       ".read": true,
       "$id": {
         ".write": "!data.exists() && newData.exists()",
-        ".validate": "newData.hasChildren(['name', 'score', 'date', 'ts']) && newData.child('name').isString() && newData.child('name').val().matches(/^.{1,6}$/) && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 999999 && newData.child('date').isString() && newData.child('date').val().matches(/^.{1,32}$/) && newData.child('ts').isNumber() && newData.child('ts').val() > 0"
+        ".validate": "newData.hasChildren(['name', 'score', 'date', 'ts']) && newData.child('name').isString() && newData.child('name').val().matches(/^.{1,6}$/) && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 5000 && newData.child('date').isString() && newData.child('date').val().matches(/^.{1,32}$/) && newData.child('ts').isNumber() && newData.child('ts').val() > 0"
       }
     }
   }
