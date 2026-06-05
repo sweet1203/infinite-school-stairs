@@ -744,6 +744,8 @@ function move(direction) { // -1 = 방향전환(left btn), 1 = 앞으로(right b
     shakeMag = 14;
     sfxMiss();
     spawnParticles(pVisual.x, pVisual.y, '#ff4444', 7);
+    // 📳 진동 피드백 (모바일)
+    if (navigator.vibrate) navigator.vibrate([60, 30, 100]);
     updateHUD();
 
     if (lives <= 0) {
@@ -1462,9 +1464,20 @@ function drawStairs() {
 }
 
 /* ─────────────────────────────────────────
-   DRAW CHARACTER
+   DRAW CHARACTER  (콤보 10+이면 부스트 캐릭터)
 ───────────────────────────────────────── */
+const BOOST_COMBO = 10;
+
 function drawCharacter(x, y, dir, wF, hop) {
+  if (combo >= BOOST_COMBO && gs === 'playing') {
+    drawBoostCharacter(x, y, dir, wF, hop);
+    return;
+  }
+  drawNormalCharacter(x, y, dir, wF, hop);
+}
+
+// ── 기존 char.png 캐릭터
+function drawNormalCharacter(x, y, dir, wF, hop) {
   ctx.save();
   ctx.translate(x, y + hop);
 
@@ -1574,6 +1587,151 @@ function drawHopLeg(hipY, xOff, thighAngle, kneeAngle) {
   ctx.beginPath(); ctx.roundRect(-4, calfLen, 6, 2, 1); ctx.fill();
 
   ctx.restore();
+  ctx.restore();
+}
+
+/* ─────────────────────────────────────────
+   BOOST CHARACTER (캔버스 직접 드로잉 — 콤보 10+)
+───────────────────────────────────────── */
+function drawBoostCharacter(x, y, dir, wF, hop) {
+  ctx.save();
+  ctx.translate(x, y + hop);
+
+  const ts        = pVisual.turnSquish;
+  const flatX     = 1 - Math.sin(ts * Math.PI) * 0.45;
+  const puffY     = 1 + Math.sin(ts * Math.PI) * 0.15;
+  ctx.scale(-dir * flatX, puffY);
+  ctx.rotate(0.06);
+
+  // ── 그림자
+  const airRatio = Math.max(0, -hop / 28);
+  ctx.fillStyle = `rgba(255,200,0,${(0.25*(1-airRatio*0.5)).toFixed(2)})`;
+  ctx.beginPath(); ctx.ellipse(0, 6, 22*(1-airRatio*0.4), 5, 0, 0, Math.PI*2); ctx.fill();
+
+  // ── 금빛 오라 (맥동)
+  const pulse = 0.55 + Math.sin(Date.now() * 0.007) * 0.25;
+  ctx.save();
+  ctx.globalAlpha = pulse * 0.35;
+  ctx.shadowBlur  = 28;
+  ctx.shadowColor = '#ffe066';
+  ctx.fillStyle   = '#ffe066';
+  ctx.beginPath(); ctx.ellipse(0, -50, 28, 48, 0, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  const sc = 0.92;
+  ctx.scale(sc, sc);
+
+  // ── 다리 (hop 포즈)
+  const airT       = Math.max(0, Math.min(1, -hop / 25));
+  const thighAngle = airT * 0.55;
+  const kneeAngle  = -(airT * 0.85);
+  [-7, 7].forEach(xo => drawHopLeg(-10, xo, thighAngle, kneeAngle));
+
+  // ── 치마 (남색)
+  ctx.fillStyle = '#1a2070';
+  ctx.beginPath();
+  ctx.moveTo(-17,-15); ctx.lineTo(17,-15); ctx.lineTo(21,2); ctx.lineTo(-21,2);
+  ctx.closePath(); ctx.fill();
+
+  // ── 블라우스 (흰색, 금빛 선)
+  ctx.fillStyle = 'white';
+  ctx.beginPath(); ctx.roundRect(-15,-42,30,29,4); ctx.fill();
+  ctx.strokeStyle = '#e8c000'; ctx.lineWidth = 1.2;
+  ctx.strokeRect(-15,-42,30,29);
+
+  // ── 리본 (핑크)
+  ctx.fillStyle = '#ff3388';
+  ctx.beginPath();
+  ctx.moveTo(0,-39); ctx.lineTo(-9,-32); ctx.lineTo(0,-35); ctx.lineTo(9,-32);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#ff66aa';
+  ctx.beginPath(); ctx.ellipse(0,-36,3,3,0,0,Math.PI*2); ctx.fill();
+
+  // ── 팔
+  ctx.fillStyle = 'white';
+  ctx.beginPath(); ctx.roundRect(-22,-40,8,22,3); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(14,-40,8,22,3); ctx.fill();
+  // 손 (들고 있는 포즈 — 위로!)
+  ctx.fillStyle = '#f5c090';
+  ctx.beginPath(); ctx.ellipse(-18,-20,5,5,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(22,-20,5,5,0,0,Math.PI*2); ctx.fill();
+
+  // ── 머리
+  ctx.fillStyle = '#f5c090';
+  ctx.beginPath(); ctx.ellipse(0,-60,15,17,0,0,Math.PI*2); ctx.fill();
+
+  // ── 머리카락 (어두운 갈색)
+  ctx.fillStyle = '#2a1200';
+  ctx.beginPath();
+  ctx.arc(0,-66,16,Math.PI+0.1,0-0.1);
+  ctx.quadraticCurveTo(18,-52,15,-44);
+  ctx.quadraticCurveTo(0,-50,-15,-44);
+  ctx.quadraticCurveTo(-18,-52,0,-66);
+  ctx.fill();
+  // 옆머리
+  ctx.beginPath(); ctx.ellipse(-14,-56,5,10,-0.4,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(14,-56,5,10,0.4,0,Math.PI*2); ctx.fill();
+
+  // ── 눈 (별눈 — 흥분 상태!)
+  const t = Date.now() * 0.004;
+  [[-7,-60],[7,-60]].forEach(([ex,ey]) => {
+    // 흰자
+    ctx.fillStyle = 'white';
+    ctx.beginPath(); ctx.ellipse(ex,ey,5,5.5,0,0,Math.PI*2); ctx.fill();
+    // 별 모양 눈동자
+    ctx.fillStyle = '#1a0050';
+    ctx.beginPath();
+    for (let i=0;i<5;i++) {
+      const a = (i*Math.PI*2/5) - Math.PI/2;
+      const r = i%2===0 ? 3.5 : 1.5;
+      i===0 ? ctx.moveTo(ex+Math.cos(a)*r, ey+Math.sin(a)*r)
+            : ctx.lineTo(ex+Math.cos(a)*r, ey+Math.sin(a)*r);
+    }
+    ctx.closePath(); ctx.fill();
+    // 반짝이
+    ctx.fillStyle = 'white';
+    ctx.beginPath(); ctx.ellipse(ex+1.5,ey-1.5,1.2,1.2,0,0,Math.PI*2); ctx.fill();
+  });
+
+  // ── 볼 홍조
+  ctx.fillStyle = 'rgba(255,100,150,0.45)';
+  ctx.beginPath(); ctx.ellipse(-12,-56,5,3,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(12,-56,5,3,0,0,Math.PI*2); ctx.fill();
+
+  // ── 웃는 입 (활짝)
+  ctx.strokeStyle = '#c03060'; ctx.lineWidth = 1.8;
+  ctx.beginPath(); ctx.arc(0,-53,6,0.15,Math.PI-0.15); ctx.stroke();
+
+  // ── 안경 (선생님!)
+  ctx.strokeStyle = '#cc9900'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(-12,-63,10,7,2); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(2,-63,10,7,2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-2,-60); ctx.lineTo(2,-60); ctx.stroke();
+
+  // ── 속도선 (부스트!)
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.strokeStyle = '#ffe066';
+  ctx.lineWidth = 2;
+  [[-30,-70],[-28,-50],[-26,-30]].forEach(([sx,sy],i) => {
+    const offset = ((Date.now()*0.005 + i*0.7) % 1) * 20;
+    ctx.beginPath();
+    ctx.moveTo(sx - offset, sy);
+    ctx.lineTo(sx - offset - 14, sy);
+    ctx.stroke();
+  });
+  ctx.restore();
+
+  // ── 콤보 숫자 머리 위에 표시
+  ctx.save();
+  ctx.globalAlpha = 0.9;
+  ctx.font = `bold ${10 + Math.min(combo,30)*0.3}px sans-serif`;
+  ctx.fillStyle = '#ffe066';
+  ctx.shadowBlur = 8; ctx.shadowColor = '#ff8800';
+  ctx.textAlign = 'center';
+  ctx.fillText(`🔥${combo}`, 0, -84);
+  ctx.restore();
+
   ctx.restore();
 }
 
